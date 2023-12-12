@@ -1,33 +1,17 @@
 import whisper_timestamped
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+from moviepy.video.fx.crop import crop
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.VideoClip import TextClip
 
 
-def extract_audio_from_video(input_path, output_path):
-    # Load the video clip
-    video_clip = VideoFileClip(input_path)
-
-    # Extract audio
-    if video_clip.audio != None:
-        audio_clip = video_clip.audio
-        audio_clip.write_audiofile(output_path)
-    else:
-        raise Exception("No audio found")
-
-    # Close the clips to free up resources
-    video_clip.close()
-    audio_clip.close()
-
-
 def addSubtitles(subs, video_clip_path):
-    video_clip = VideoFileClip(video_clip_path)
+    video_clip = VideoFileClip(video_clip_path, target_resolution=(600, 800))
     result = CompositeVideoClip([video_clip, subs.set_pos(("center", "center"))])
-
     result.write_videofile(
-        "output.mp4",
+        "content/output.mp4",
         fps=video_clip.fps,
         temp_audiofile="temp-audio.m4a",
         remove_temp=True,
