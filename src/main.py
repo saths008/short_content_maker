@@ -159,7 +159,7 @@ def createVideoAndSubtitles(file_path: str):
 
 # createVideoAndSubtitles("resources/sam_sulek.mp4")
 repurposeVideo(
-    "resources/worst_crash_ever.mov",
-    "resources/background_tracks/thebatmantheme.mp3",
+    "resources/",
+    "resources/",
     False,
 )
