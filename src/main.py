@@ -6,7 +6,6 @@ from moviepy.video.compositing.CompositeVideoClip import (
     CompositeVideoClip,
 )
 from moviepy.video.fx.crop import crop
-from moviepy.video.fx.resize import resize
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.VideoClip import TextClip
@@ -15,6 +14,10 @@ from moviepy.video.VideoClip import TextClip
 scaleAudioClipProperties = {
     "resources/tiktokGymPhonk.mp3": (0.1, 25),
     "resources/memoryReboot.mp3": (0.1, 35),
+    "resources/slowedparticles.mp3": (0.8, 20),
+    "resources/interstellartune.mp3": (0.8, 35),
+    "resources/thebatmantheme.mp3": (0.7, 42),
+    "": (None, None),
 }
 
 
@@ -30,6 +33,68 @@ def createAudio(audio_clip_path, video_clip):
     audio_clip = volumex(audio_clip, volume_scale)
     audio = CompositeAudioClip([audio_clip, original_audio])
     return audio
+
+
+def createAudioWithIntroAndOutro(
+    background_music_path,
+    intro_clip_path,
+    outro_clip_path,
+    video_clip,
+    include_video_audio=True,
+):
+    if background_music_path not in scaleAudioClipProperties:
+        raise Exception("Audio clip not found in scaleAudioClipProperties")
+    (volume_scale, secondsIntoClip) = scaleAudioClipProperties[background_music_path]
+    intro_clip_audio = AudioFileClip(intro_clip_path).set_start(0)
+    outro_clip_audio = AudioFileClip(outro_clip_path)
+    outro_clip_length = video_clip.duration - outro_clip_audio.duration
+
+    outro_clip_audio = outro_clip_audio.set_start(outro_clip_length)
+    original_audio = (
+        video_clip.audio
+        if include_video_audio
+        else AudioFileClip("resources/no-audio.mp3")
+    )
+
+    if background_music_path == "":
+        audio = CompositeAudioClip([intro_clip_audio, original_audio, outro_clip_audio])
+    else:
+        audio_clip = AudioFileClip(background_music_path).subclip(
+            secondsIntoClip, secondsIntoClip + video_clip.duration
+        )
+        audio_clip = volumex(audio_clip, volume_scale)
+        audio = CompositeAudioClip(
+            [intro_clip_audio, audio_clip, original_audio, outro_clip_audio]
+        )
+    return (audio, outro_clip_length)
+
+
+def repurposeVideo(video_clip_path, audio_clip_path, include_video_audio=True):
+    video_clip = VideoFileClip(video_clip_path)
+    introSubtitlesClip = generateSubtitles("resources/introtiktok.mp3")
+    outroSubtitlesClip = generateSubtitles("resources/outrotiktok.mp3")
+    # audio = createAudio(audio_clip_path, video_clip)
+    (audio, outro_clip_length) = createAudioWithIntroAndOutro(
+        audio_clip_path,
+        "resources/introtiktok.mp3",
+        "resources/outrotiktok.mp3",
+        video_clip,
+        include_video_audio,
+    )
+    video_clip = video_clip.set_audio(audio)
+    introSubtitlesClip = introSubtitlesClip.set_position(("center", "center"))
+    outroSubtitlesClip = outroSubtitlesClip.set_position(("center", "center"))
+    introSubtitlesClip = introSubtitlesClip.set_start(0)
+    outroSubtitlesClip = outroSubtitlesClip.set_start(outro_clip_length)
+    result = CompositeVideoClip([video_clip, introSubtitlesClip, outroSubtitlesClip])
+    result.write_videofile(
+        "content/output.mp4",
+        fps=video_clip.fps,
+        temp_audiofile="temp-audio.m4a",
+        remove_temp=True,
+        codec="libx264",
+        audio_codec="aac",
+    )
 
 
 def createVideo(subs: SubtitlesClip, video_clip_path, audio_clip_path):
@@ -60,13 +125,15 @@ def createVideo(subs: SubtitlesClip, video_clip_path, audio_clip_path):
     )
 
 
-def subtitle_generator(subs):
-    generator = lambda txt: TextClip(txt, font="Arial", fontsize=40, color="white")
+def subtitle_generator(subs) -> SubtitlesClip:
+    generator = lambda txt: TextClip(
+        txt, font="resources/fonts/KOMIKAX_.ttf", fontsize=50, color="white"
+    )
     subtitles = SubtitlesClip(subs, generator)
     return subtitles
 
 
-def run_whisper(file_path: str):
+def generateSubtitles(file_path: str) -> SubtitlesClip:
     model = whisper_timestamped.load_model("base")
     audio = whisper_timestamped.load_audio(file_path)
     result = whisper_timestamped.transcribe(model, audio)
@@ -82,8 +149,17 @@ def run_whisper(file_path: str):
             print(f"Duration: {duration}, Text: {text}, Start: {word['start']}")
             subs.append(((start_time, end_time), text))
 
-    subtitles = subtitle_generator(subs)
-    createVideo(subtitles, file_path, "resources/memoryReboot.mp3")
+    return subtitle_generator(subs)
 
 
-run_whisper("resources/sam_sulek.mp4")
+def createVideoAndSubtitles(file_path: str):
+    subtitles = generateSubtitles(file_path)
+    createVideo(subtitles, file_path, "resources/background_tracks/memoryReboot.mp3")
+
+
+# createVideoAndSubtitles("resources/sam_sulek.mp4")
+repurposeVideo(
+    "resources/worst_crash_ever.mov",
+    "resources/background_tracks/thebatmantheme.mp3",
+    False,
+)
