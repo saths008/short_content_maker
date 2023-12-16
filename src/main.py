@@ -6,6 +6,7 @@ from moviepy.video.compositing.CompositeVideoClip import (
     CompositeVideoClip,
 )
 from moviepy.video.fx.crop import crop
+from moviepy.video.fx.resize import resize
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.VideoClip import TextClip
@@ -28,11 +29,24 @@ def createAudio(audio_clip_path, video_clip):
     return audio
 
 
-def createVideo(subs, video_clip_path, audio_clip_path):
-    video_clip = VideoFileClip(video_clip_path, target_resolution=(900, 800))
+def createVideo(subs: SubtitlesClip, video_clip_path, audio_clip_path):
+    video_clip = VideoFileClip(video_clip_path, target_resolution=(1920, 1920))
+    x_center = video_clip.size[0] // 2
+    y_center = video_clip.size[1] // 2
+    print(f"x_center: {x_center}, y_center: {y_center}")
+    tiktok_width = 900
+    tiktok_height = 1600
+    video_clip = video_clip.fx(
+        crop,
+        x_center=y_center,
+        y_center=x_center,
+        width=tiktok_width,
+        height=tiktok_height,
+    )
+    print(f"video_clip.size: {video_clip.size}")
     audio = createAudio(audio_clip_path, video_clip)
     video_clip = video_clip.set_audio(audio)
-    result = CompositeVideoClip([video_clip, subs.set_pos(("center", "center"))])
+    result = CompositeVideoClip([video_clip, subs.set_position(("center", "center"))])
     result.write_videofile(
         "content/output.mp4",
         fps=video_clip.fps,
@@ -44,7 +58,7 @@ def createVideo(subs, video_clip_path, audio_clip_path):
 
 
 def subtitle_generator(subs):
-    generator = lambda txt: TextClip(txt, font="Arial", fontsize=24, color="white")
+    generator = lambda txt: TextClip(txt, font="Arial", fontsize=40, color="white")
     subtitles = SubtitlesClip(subs, generator)
     return subtitles
 
@@ -69,4 +83,4 @@ def run_whisper(file_path: str):
     createVideo(subtitles, file_path, "resources/tiktokGymPhonk.mp3")
 
 
-run_whisper("")
+run_whisper("resources/sam_sulek.mp4")
