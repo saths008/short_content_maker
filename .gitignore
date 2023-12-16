@@ -1,3 +1,5 @@
 content/
 venv/
 resources/
+client_secrets.json
+src/upload_yt_video.py-oauth2.json

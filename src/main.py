@@ -12,7 +12,10 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.VideoClip import TextClip
 
 # value is (value to scale audio volume, seconds into audio to use)
-scaleAudioClipProperties = {"resources/tiktokGymPhonk.mp3": (0.1, 25)}
+scaleAudioClipProperties = {
+    "resources/tiktokGymPhonk.mp3": (0.1, 25),
+    "resources/memoryReboot.mp3": (0.1, 35),
+}
 
 
 # Return an audio clip with the audio from path + the original audio
@@ -34,8 +37,8 @@ def createVideo(subs: SubtitlesClip, video_clip_path, audio_clip_path):
     x_center = video_clip.size[0] // 2
     y_center = video_clip.size[1] // 2
     print(f"x_center: {x_center}, y_center: {y_center}")
-    tiktok_width = 900
-    tiktok_height = 1600
+    tiktok_width = 900  # 1080
+    tiktok_height = 1600  # 1920
     video_clip = video_clip.fx(
         crop,
         x_center=y_center,
@@ -80,7 +83,7 @@ def run_whisper(file_path: str):
             subs.append(((start_time, end_time), text))
 
     subtitles = subtitle_generator(subs)
-    createVideo(subtitles, file_path, "resources/tiktokGymPhonk.mp3")
+    createVideo(subtitles, file_path, "resources/memoryReboot.mp3")
 
 
 run_whisper("resources/sam_sulek.mp4")
